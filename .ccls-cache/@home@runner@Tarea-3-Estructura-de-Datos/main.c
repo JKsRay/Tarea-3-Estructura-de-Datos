@@ -27,6 +27,8 @@ typedef struct{
     List* listaTemporal;
 }TareaNodoPila;
 
+void agregarTarea(Map*, TareaNodo*);
+
 int is_equal_string(void * key1, void * key2) {
     if(strcmp((char*)key1, (char*)key2)==0) return 1;
     return 0;
@@ -71,6 +73,8 @@ int main() {
 
       switch (opcionNumero) {
       case 1:
+        tarea = (TareaNodo*) malloc(sizeof(TareaNodo));
+        agregarTarea(mapaTareas, tarea);
         break;
 
       case 2:
@@ -103,4 +107,41 @@ int main() {
     }
   }
     return 0;
+}
+
+void agregarTarea(Map * mapaTareas, TareaNodo *tarea){
+  int prioridadAux = -1;
+  char prioridadAuxString[21];
+  printf("INGRESE NOMBRE DE LA TAREA A AGREGAR: ");
+  scanf("%21[^\n]s", tarea->nombre);
+  getchar();
+
+  TareaNodo* tareaBuscada = searchMap(mapaTareas, tarea->nombre);
+  if(tareaBuscada != NULL) {
+    printf("\nLa tarea %s ya existe\n\n", tarea->nombre);
+    return;
+  }
+
+  printf("\nINGRESE LA PRIORIDAD DE LA TAREA: ");
+
+  do {
+    scanf("%20[^\n]s", prioridadAuxString);
+    getchar();
+    if(isdigit(prioridadAuxString[0])) {
+      prioridadAux = atoi(prioridadAuxString);
+    }
+
+    if (prioridadAux <= 0 || isalpha(prioridadAuxString[0])) {
+      printf("\nINGRESE UNA PRIORIDAD VÁLIDA \n");
+    } 
+
+  } while (isalpha(prioridadAuxString[0]) || prioridadAux <=0);
+  
+  tarea->listaPrecedentes = createList();
+  tarea->prioridad = prioridadAux;
+  tarea->explorado = false;
+  insertMap(mapaTareas, tarea->nombre, tarea);
+
+  printf("\nTAREA AGREGADA CON ÉXITO\n");
+
 }
