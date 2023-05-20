@@ -27,10 +27,15 @@ typedef struct{
     List* listaTemporal;
 }TareaNodoPila;
 
-void agregarTarea(Map*, TareaNodo*);
+void agregarTarea(Map*, TareaNodo*, Stack*);
 void precedenciaTareas(Map*, Stack*);
 void insertarAccionTareaPrecedente(Stack*, char*,TareaNodo* , TareaNodoPrecedente*);
-TareaNodo* verifExiste(char, Map );
+void insertarAccionTareas1(Stack *, char * , TareaNodo *);
+TareaNodo* verifExiste(char*, Map*);
+void mostrarTareas(Map*);
+void ingresarTareasHeap(Map*, List*);
+void marcarVisitado(Map*, TareaNodo*);
+void reiniciarBooleanos(Map*);
 
 
 int is_equal_string(void * key1, void * key2) {
@@ -78,7 +83,7 @@ int main() {
       switch (opcionNumero) {
       case 1:
         tarea = (TareaNodo*) malloc(sizeof(TareaNodo));
-        agregarTarea(mapaTareas, tarea);
+        agregarTarea(mapaTareas, tarea, pilaAcciones);
         break;
 
       case 2:
@@ -86,6 +91,7 @@ int main() {
         break;
 
       case 3:
+        mostrarTareas(mapaTareas);
         break;
 
       case 4:
@@ -114,7 +120,14 @@ int main() {
     return 0;
 }
 
-void agregarTarea(Map * mapaTareas, TareaNodo *tarea){
+void insertarAccionTareas1(Stack * pilaAcciones, char * accion, TareaNodo * tarea){
+  TareaNodoPila * auxPila= malloc(sizeof(TareaNodoPila));
+  strcpy(auxPila->nombreAccion, accion);
+  auxPila->tarea = tarea;
+  stack_push(pilaAcciones, auxPila);
+}
+
+void agregarTarea(Map * mapaTareas, TareaNodo *tarea, Stack* pilaAcciones){
   int prioridadAux = -1;
   char prioridadAuxString[21];
   printf("INGRESE NOMBRE DE LA TAREA A AGREGAR: ");
@@ -145,10 +158,13 @@ void agregarTarea(Map * mapaTareas, TareaNodo *tarea){
   tarea->listaPrecedentes = createList();
   tarea->prioridad = prioridadAux;
   tarea->explorado = false;
+  insertarAccionTareas1(pilaAcciones, "agregar", tarea);
   insertMap(mapaTareas, tarea->nombre, tarea);
 
   printf("\nTAREA AGREGADA CON ÉXITO\n");
+
 }
+
 
 TareaNodo* verifExiste(char *nombreTarea, Map *mapaTareas){
   TareaNodo * tareaAux = searchMap(mapaTareas, nombreTarea);
@@ -200,5 +216,116 @@ void precedenciaTareas(Map* mapaTareas, Stack* pilaAcciones){
   pushBack(tareaAux2->listaPrecedentes, tareaPrecedente);
 
   printf("\nPRECEDENCIA REGISTRADA CON ÉXITO\n");
+}
+
+bool todasVisitadas(List* listaPrecedentes){
+  TareaNodoPrecedente* aux = firstList(listaPrecedentes);
+
+  while(aux!= NULL){
+      if(aux->visitado == false) return false;
+      aux = nextList(listaPrecedentes);
+    }
+  return true;
+}
+
+void marcarVisitado(Map * mapaTareas, TareaNodo* auxMaximo){
+  TareaNodo * tareaAux = firstMap(mapaTareas);
+  while(tareaAux != NULL){
+    TareaNodoPrecedente * auxPrecedente = firstList(tareaAux->listaPrecedentes);
+    while(auxPrecedente != NULL){
+        if(strcmp(auxPrecedente->nombre, auxMaximo->nombre) == 0){
+          auxPrecedente->visitado = true;
+        }
+        auxPrecedente = nextList(tareaAux->listaPrecedentes);
+      }
+    tareaAux = nextMap(mapaTareas);
+  }
+}
+
+void ingresarTareasHeap(Map* mapaTareas, List* tareasOrdenadas){
+
+  Heap* heapTareas = createHeap();
+  TareaNodo *tareaAux = firstMap(mapaTareas);
+  while(tareaAux != NULL){
+    if(firstList(tareaAux->listaPrecedentes) == NULL){
+      tareaAux->explorado = true;
+      heap_push(heapTareas, tareaAux, tareaAux->prioridad);
+    }  
+    tareaAux = nextMap(mapaTareas);
+  }
+  
+  while(heap_top(heapTareas) != NULL){
+    TareaNodo* auxMaximo = heap_top(heapTareas);
+    heap_pop(heapTareas);
+    pushBack(tareasOrdenadas, auxMaximo);
+    marcarVisitado(mapaTareas, auxMaximo);
+    TareaNodo * aux = firstMap(mapaTareas);
+    while(aux != NULL){
+      if(aux->explorado != true){
+        TareaNodoPrecedente * auxPrecedente = firstList(aux->listaPrecedentes);
+      
+        if(todasVisitadas(aux->listaPrecedentes) == true || auxPrecedente == NULL){
+          aux->explorado = true;
+          heap_push(heapTareas, aux, aux->prioridad);
+        }
+      }
+      aux = nextMap(mapaTareas);
+    }
+  }
+}
+
+void reiniciarBooleanos(Map* mapaTareas){
+  TareaNodo * aux = firstMap(mapaTareas);
+
+  while(aux != NULL){
+    aux->explorado = false;
+    if(firstList(aux->listaPrecedentes) != NULL){
+      TareaNodoPrecedente * auxPrecedente = firstList(aux->listaPrecedentes);
+      while(auxPrecedente != NULL){
+        auxPrecedente->visitado = false;
+        auxPrecedente = nextList(aux->listaPrecedentes);
+      }
+    }
+    aux = nextMap(mapaTareas);
+  }
+}
+
+void mostrarTareas(Map* mapaTareas){
+  List * tareasOrdenadas = createList();
+  TareaNodo * tareaAux = firstMap(mapaTareas);
+  reiniciarBooleanos(mapaTareas);
+
+  if(tareaAux == NULL){
+    printf("\nNO HAY TAREAS INGRESADAS\n");
+    return;
+  }
+  
+  //Meter al heap las tareas sin precedentes
+  ingresarTareasHeap(mapaTareas, tareasOrdenadas);
+
+  int cont = 1;
+  printf("TAREAS POR HACER, ORDENADA POR PRIORIDAD Y PRECEDENCIA: \n\n");
+
+  TareaNodo * tareaAuxLista = firstList(tareasOrdenadas);
+
+  while(tareaAuxLista != NULL){
+    if(firstList(tareaAuxLista->listaPrecedentes) == NULL){
+      printf(" %d. %s (Prioridad: %d) \n", cont, tareaAuxLista->nombre, tareaAuxLista->prioridad);
+    }
+    else{
+      printf(" %d. %s (Prioridad: %d) - Precedente(s): ", cont, tareaAuxLista->nombre, tareaAuxLista->prioridad);
+      TareaNodoPrecedente * auxPrecedente = firstList(tareaAuxLista->listaPrecedentes);
+      while(auxPrecedente != NULL){
+        printf("%s ", auxPrecedente->nombre);
+        auxPrecedente = nextList(tareaAuxLista->listaPrecedentes);
+      }
+      
+      printf("\n");
+    }                       
+
+    tareaAuxLista = nextList(tareasOrdenadas);
+    cont++;
+  }
+
 }
 
