@@ -36,6 +36,10 @@ void mostrarTareas(Map*);
 void ingresarTareasHeap(Map*, List*);
 void marcarVisitado(Map*, TareaNodo*);
 void reiniciarBooleanos(Map*);
+void marcarTareaComoHecha(Map*, Stack*);
+void eliminarTarea(Map*, TareaNodo*, char*, Stack*);
+void insertarAccionTareas(Stack*, char*, TareaNodo*, List*);
+void clonarLista(List*, List*);
 
 
 int is_equal_string(void * key1, void * key2) {
@@ -95,6 +99,7 @@ int main() {
         break;
 
       case 4:
+        marcarTareaComoHecha(mapaTareas, pilaAcciones);
         break;
 
       case 5:
@@ -329,3 +334,76 @@ void mostrarTareas(Map* mapaTareas){
 
 }
 
+//Creamos una lista temporal en donde guardaremos las tareas que tenian de precedencia la tarea que eliminaremos. Luego, borramos la tarea correspondiente del mapa. Buscamos aquellas tareas en el mapa que tenían como precedente la tarea que eliminamos, la agregamos a la listaTemporal y la eliminamos de su listaPrecedentes. La lista temporal nos servirá al momento de deshacer esta opción. Finalmente, guardamos la acción en la pila de acciones.
+void eliminarTarea(Map* mapaTareas, TareaNodo* tarea, char *nombreTarea, Stack * pilaAcciones) {
+  List* listaTemporal = createList();
+  eraseMap(mapaTareas, tarea->nombre);
+  
+  TareaNodo *tareaAux = firstMap(mapaTareas);
+  while (tareaAux != NULL) {
+    TareaNodoPrecedente *auxPrecedente = firstList(tareaAux->listaPrecedentes);
+    while (auxPrecedente != NULL) {
+      if (strcmp(auxPrecedente->nombre, nombreTarea) == 0) {
+          pushBack(listaTemporal, tareaAux);
+          popCurrent(tareaAux->listaPrecedentes);   
+      }
+      auxPrecedente = nextList(tareaAux->listaPrecedentes);
+    }
+    tareaAux = nextMap(mapaTareas);
+  }
+  insertarAccionTareas(pilaAcciones,"eliminar", tarea, listaTemporal);
+  printf("\nTAREA ELIMINADA CON ÉXITO\n");
+}
+
+//Verificamos si la tarea a eliminar existe, si existe comprobamos si tiene precedentes por hacer. En el caso de que aún tenga precedentes imprimimos un texto de advertencia y en el caso de que el usuario esté de acuerdo lo eliminamos. En caso contrario, return. Si no tiene precedentes simplemente eliminamos la tarea.
+void marcarTareaComoHecha(Map * mapaTareas, Stack* pilaAcciones){
+  char nombreTareaAEliminar[21];
+  printf("\nINGRESE LA TAREA QUE DESEA ELIMINAR: ");
+  scanf("%20[^\n]s", nombreTareaAEliminar);
+  getchar();
+  
+  TareaNodo *tareaAEliminar = verifExiste(nombreTareaAEliminar, mapaTareas);
+  if(tareaAEliminar == NULL) return;
+  
+  if (firstList(tareaAEliminar->listaPrecedentes) != NULL) {
+    printf("\n¿ESTÁS SEGURX QUE DESEA ELIMINAR ESTA TAREA?");
+    printf("\n1: SI\n2: NO\n");
+
+    int opcion;
+    char entrada[11];
+    while (1) {
+      scanf("%10s", entrada);
+      opcion = atoi(entrada);
+
+      if (opcion == 1) {
+        eliminarTarea(mapaTareas, tareaAEliminar, nombreTareaAEliminar, pilaAcciones);
+        break;
+      } else if (opcion == 2) {
+        return;
+      } else {
+        printf("\nSELECCIONE UNA OPCIÓN VÁLIDA\n\n");
+      }
+    }
+  } else {
+  // Caso en donde no tiene precedentes
+  eliminarTarea(mapaTareas, tareaAEliminar, nombreTareaAEliminar, pilaAcciones);
+  }
+}
+
+//Al momento de eliminar tarea
+void insertarAccionTareas(Stack * pilaAcciones, char * accion, TareaNodo * tarea, List* listaTemporal){
+  TareaNodoPila * auxPila= malloc(sizeof(TareaNodoPila));
+  strcpy(auxPila->nombreAccion, accion);
+  auxPila->tarea = tarea;
+  auxPila->listaTemporal = createList();
+  clonarLista(auxPila->listaTemporal, listaTemporal);
+  stack_push(pilaAcciones, auxPila);
+}
+
+void clonarLista(List* listaPila, List* listaTemporal){
+  TareaNodo* auxTemporal = firstList(listaTemporal);
+  while(auxTemporal != NULL){
+    pushBack(listaPila, auxTemporal);
+    auxTemporal = nextList(listaTemporal);
+  }
+}
