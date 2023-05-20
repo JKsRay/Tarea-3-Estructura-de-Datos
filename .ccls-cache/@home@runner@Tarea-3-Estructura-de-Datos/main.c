@@ -28,6 +28,10 @@ typedef struct{
 }TareaNodoPila;
 
 void agregarTarea(Map*, TareaNodo*);
+void precedenciaTareas(Map*, Stack*);
+void insertarAccionTareaPrecedente(Stack*, char*,TareaNodo* , TareaNodoPrecedente*);
+TareaNodo* verifExiste(char, Map );
+
 
 int is_equal_string(void * key1, void * key2) {
     if(strcmp((char*)key1, (char*)key2)==0) return 1;
@@ -78,6 +82,7 @@ int main() {
         break;
 
       case 2:
+        precedenciaTareas(mapaTareas, pilaAcciones);
         break;
 
       case 3:
@@ -143,5 +148,57 @@ void agregarTarea(Map * mapaTareas, TareaNodo *tarea){
   insertMap(mapaTareas, tarea->nombre, tarea);
 
   printf("\nTAREA AGREGADA CON ÉXITO\n");
-
 }
+
+TareaNodo* verifExiste(char *nombreTarea, Map *mapaTareas){
+  TareaNodo * tareaAux = searchMap(mapaTareas, nombreTarea);
+  if(tareaAux == NULL){
+    printf("\nESA TAREA NO EXISTE\n");
+    return NULL;
+  }
+  return tareaAux;
+}
+
+//Insertamos precedencia
+void insertarAccionTareaPrecedente(Stack*pilaAcciones, char* accion, TareaNodo * nombreTarea, TareaNodoPrecedente * precedente) {
+  TareaNodoPila * auxPila= malloc(sizeof(TareaNodoPila));
+
+  strcpy(auxPila->nombreAccion, accion);
+  auxPila->tarea = nombreTarea;
+  auxPila->tareaPrecedente = precedente;
+  stack_push(pilaAcciones, auxPila);
+}
+
+//Le pedimos al usuario primero la tarea que se realizara antes(por ej, Tarea A), y luego la tarea con precedente(por ej, Tarea B), y verificamos que estas 2 existan en el mapa. Luego creamos un nodoPrecedente, el cual guardara todos los datos en la tarea B e insertamos ese nodo a la lista de precedentes de la tarea A. Guardamos tambien la accion realizada en la pila de acciones.
+void precedenciaTareas(Map* mapaTareas, Stack* pilaAcciones){
+  char nombreTarea1[21], nombreTarea2[21];
+  printf("\nINGRESE LA TAREA QUE SE DEBE REALIZAR ANTES: ");
+  scanf("%20[^\n]s", nombreTarea1);
+  getchar();
+  
+  TareaNodo *tareaAux1 = verifExiste(nombreTarea1, mapaTareas);
+  if(tareaAux1 == NULL) return;
+  
+  printf("\nINGRESE LA TAREA CON PRECEDENTE: ");
+   scanf("%20[^\n]s", nombreTarea2);
+  getchar();
+  
+  TareaNodo *tareaAux2 = verifExiste(nombreTarea2, mapaTareas);
+  if(tareaAux2 == NULL) return;
+
+  if(strcmp(nombreTarea1, nombreTarea2) == 0){
+    printf("\nNO PUEDES ASIGNARLE %s A SI MISMA\n", nombreTarea1);
+    return;
+  }
+
+  TareaNodoPrecedente * tareaPrecedente = (TareaNodoPrecedente*) malloc(sizeof(TareaNodoPrecedente));
+  strcpy(tareaPrecedente->nombre,nombreTarea1);
+  tareaPrecedente->prioridad = tareaAux1->prioridad;
+  tareaPrecedente->visitado = false;
+
+  insertarAccionTareaPrecedente(pilaAcciones, "establecer precedencia", tareaAux2, tareaPrecedente);
+  pushBack(tareaAux2->listaPrecedentes, tareaPrecedente);
+
+  printf("\nPRECEDENCIA REGISTRADA CON ÉXITO\n");
+}
+
