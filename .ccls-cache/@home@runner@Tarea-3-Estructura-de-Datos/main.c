@@ -40,6 +40,10 @@ void marcarTareaComoHecha(Map*, Stack*);
 void eliminarTarea(Map*, TareaNodo*, char*, Stack*);
 void insertarAccionTareas(Stack*, char*, TareaNodo*, List*);
 void clonarLista(List*, List*);
+void deshacerUltimaAccion(Map*, Stack*);
+void deshacerPrecedencia(Map*, TareaNodoPrecedente* , TareaNodo*);
+void deshacerEliminacion(Map* , TareaNodoPila*);
+void deshacerAdicion(Map *, TareaNodo*, char*);
 
 
 int is_equal_string(void * key1, void * key2) {
@@ -103,6 +107,7 @@ int main() {
         break;
 
       case 5:
+        deshacerUltimaAccion(mapaTareas, pilaAcciones);
         break;
 
       case 6:
@@ -406,4 +411,81 @@ void clonarLista(List* listaPila, List* listaTemporal){
     pushBack(listaPila, auxTemporal);
     auxTemporal = nextList(listaTemporal);
   }
+}
+
+void deshacerPrecedencia(Map * mapaTareas, TareaNodoPrecedente* tareaPrecedente, TareaNodo* tarea){
+  TareaNodoPrecedente * aux = firstList(tarea->listaPrecedentes);
+
+  while(aux != NULL){
+    if(strcmp(aux->nombre, tareaPrecedente->nombre) == 0){
+      popCurrent(tarea->listaPrecedentes);
+    }
+    aux = nextList(tarea->listaPrecedentes);
+  }
+}
+
+void deshacerEliminacion(Map * mapaTareas, TareaNodoPila* nodoPila){
+  TareaNodo* aux = firstMap(mapaTareas);
+  
+  TareaNodoPrecedente * tareaPilaAuxPrecedente = (TareaNodoPrecedente*)   malloc(sizeof(TareaNodoPrecedente));
+  strcpy(tareaPilaAuxPrecedente->nombre,nodoPila->tarea->nombre);
+  tareaPilaAuxPrecedente->prioridad = nodoPila->tarea->prioridad;
+  tareaPilaAuxPrecedente->visitado = false;
+  
+  while(aux!=NULL){
+      TareaNodoPrecedente* auxPrecedente = firstList(nodoPila->listaTemporal);
+      while(auxPrecedente!= NULL){
+        if(strcmp(aux->nombre, auxPrecedente->nombre)==0){
+          pushBack(aux->listaPrecedentes, tareaPilaAuxPrecedente);
+        }
+        auxPrecedente = nextList(nodoPila->listaTemporal);
+      }
+      aux = nextMap(mapaTareas);
+    }
+  insertMap(mapaTareas, nodoPila->tarea->nombre, nodoPila->tarea);
+}
+
+void deshacerAdicion(Map* mapaTareas, TareaNodo * tarea, char * nombreTarea){
+  List* listaTemporal = createList();
+  eraseMap(mapaTareas, tarea->nombre);
+  
+  TareaNodo *tareaAux = firstMap(mapaTareas);
+  while (tareaAux != NULL) {
+    TareaNodoPrecedente *auxPrecedente = firstList(tareaAux->listaPrecedentes);
+    while (auxPrecedente != NULL) {
+      if (strcmp(auxPrecedente->nombre, nombreTarea) == 0) {
+          pushBack(listaTemporal, tareaAux);
+          popCurrent(tareaAux->listaPrecedentes);   
+      }
+      auxPrecedente = nextList(tareaAux->listaPrecedentes);
+    }
+    tareaAux = nextMap(mapaTareas);
+  } 
+}
+
+void deshacerUltimaAccion(Map* mapaTareas, Stack* pila){
+  if (stack_top(pila) == NULL) {
+      printf("No hay acciones para deshacer.\n");
+      return;
+  }
+  
+  TareaNodoPila* ultimaAccion = stack_top(pila);
+  
+  if (strcmp(ultimaAccion->nombreAccion, "agregar") == 0) {
+    deshacerAdicion(mapaTareas, ultimaAccion->tarea, ultimaAccion->tarea->nombre);
+    
+  } else if (strcmp(ultimaAccion->nombreAccion, "establecer precedencia") == 0) {
+    deshacerPrecedencia(mapaTareas, ultimaAccion->tareaPrecedente, ultimaAccion->tarea);
+     
+  } else if (strcmp(ultimaAccion->nombreAccion, "eliminar") == 0) {
+    deshacerEliminacion(mapaTareas, ultimaAccion);
+     
+  } else {
+      printf("Acción desconocida.\n");
+      return;
+  }
+
+  stack_pop(pila);
+  free(ultimaAccion);
+  printf("\nACCIÓN DESHECHA CON ÉXITO\n");
 }
