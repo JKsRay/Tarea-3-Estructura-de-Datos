@@ -74,6 +74,7 @@ int main() {
   Stack*pilaAcciones = stack_create();
   
   while (ejecucion) {
+    printf("\nBIENVENIDX, ELIJA UNA OPCIÓN\n");
     printf("\n1.-AGREGAR TAREA\n");
     printf("2.-ESTABLECER PRECEDENCIA ENTRE TAREAS\n");
     printf("3.-MOSTRAR TAREAS POR HACER\n");
@@ -545,6 +546,14 @@ char *get_csv_field (char * tmp, int k) {
 }
 
 
+/*La función se encarga de leer y almacenar datos de tareas desde un archivo csv. Se ingresa el nombre del archivo a importar. El archivo lo abrimos en modo de lectura y se verifica si se pudo abrir correctamente.Se lee la primera línea del archivo y se descarta, ya que son los títulos. Se lee las demás líneas del archivo y se procesa. Para cada línea, se crea una estructura TareaNodo y se asigna memoria.
+Se extraen el nombre,la prioridad y si es que tiene, precedentes.
+El nombre y la prioridad se asignan a la tarea actual.
+Si es que hay precedentes, se buscan en el mapa y se crean TareaNodoPrecedente con los datos que correspondan.
+Luego, se agregan las tareas precedentes a la lista de precedentes de la tarea actual.
+La tarea actual se inserta en el mapa de tareas utilizando su nombre como clave.
+Una vez que se procesan todas las líneas, se cierra el archivo.
+Se muestra un mensaje indicando que los datos se cargaron correctamente.*/
 void importarDatosTareas(Map*mapaTareas) {
   char nombreArchivo[101];
   printf("\nINGRESE NOMBRE DEL ARCHIVO A IMPORTAR LOS JUGADORES:\n");
