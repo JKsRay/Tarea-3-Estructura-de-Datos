@@ -130,6 +130,7 @@ int main() {
     return 0;
 }
 
+//Al momento de agregar tarea
 void insertarAccionTareas1(Stack * pilaAcciones, char * accion, TareaNodo * tarea){
   TareaNodoPila * auxPila= malloc(sizeof(TareaNodoPila));
   strcpy(auxPila->nombreAccion, accion);
@@ -137,6 +138,7 @@ void insertarAccionTareas1(Stack * pilaAcciones, char * accion, TareaNodo * tare
   stack_push(pilaAcciones, auxPila);
 }
 
+//Para agregar tareas, primero verificamos de que esta no se encuentre en el mapa anteriormente. Luego inicializamos sus variables, insertamos la accion "agregar" junto la tarea dentro de la pila de acciones e ingresamos la tarea al mapa.
 void agregarTarea(Map * mapaTareas, TareaNodo *tarea, Stack* pilaAcciones){
   int prioridadAux = -1;
   char prioridadAuxString[21];
@@ -185,7 +187,7 @@ TareaNodo* verifExiste(char *nombreTarea, Map *mapaTareas){
   return tareaAux;
 }
 
-//Insertamos precedencia
+//Insertamos precedencia en la pila de acciones
 void insertarAccionTareaPrecedente(Stack*pilaAcciones, char* accion, TareaNodo * nombreTarea, TareaNodoPrecedente * precedente) {
   TareaNodoPila * auxPila= malloc(sizeof(TareaNodoPila));
 
@@ -228,6 +230,7 @@ void precedenciaTareas(Map* mapaTareas, Stack* pilaAcciones){
   printf("\nPRECEDENCIA REGISTRADA CON ÉXITO\n");
 }
 
+//Revisamos que cada nodo de la lista de precedente haya sido visitado.
 bool todasVisitadas(List* listaPrecedentes){
   TareaNodoPrecedente* aux = firstList(listaPrecedentes);
 
@@ -238,6 +241,7 @@ bool todasVisitadas(List* listaPrecedentes){
   return true;
 }
 
+//Busca el/los nodoPrecedentes en la lista precedentes de cada tarea del mapa que sean iguales que la raiz del monticulo, y los marca como visitado.
 void marcarVisitado(Map * mapaTareas, TareaNodo* auxMaximo){
   TareaNodo * tareaAux = firstMap(mapaTareas);
   while(tareaAux != NULL){
@@ -252,6 +256,7 @@ void marcarVisitado(Map * mapaTareas, TareaNodo* auxMaximo){
   }
 }
 
+//Esta funcion se basa principalmente en el algoritmo de Kahn. Primero creamos un montículo de mínimos, y un auxiliar que apunta al primer elemento del mapa y lo recorremos mediante un ciclo y nextMap en busca de todas las tareas que posean precedentes, y cada una de ellas las ingresamos al montículo. Luego recorremos el montículo con un ciclo y la condicion que la raiz sea diferente de NULL (heap_top), creamos la variable auxMaximo que apunta a la raiz del montículo, y eliminamos la raiz. Ingresamos el auxMaximo dentro de la lista donde estaremos guardando las tareas de forma ordenada y llamamos la funcion marcarVisitado. Luego recorremos el mapa nuevamente y preguntamos si el primero del mapa no ha sido explorado aun, si esta condicion se cumple, hacemos otra condicion, que en caso de que todos los nodosPrecedentes de la lista de la tarea correspondiente esten marcados como visitado, o simplemente la lista esté vacia, marca esa tarea como explorada y la ingresa al monticulo. Esto lo hace hasta que ya no queden elementos en el monticulo, dejando la lista de tareas ordenadas, con todas las tareas ordenadas por prioridad y precedencia.
 void ingresarTareasHeap(Map* mapaTareas, List* tareasOrdenadas){
 
   Heap* heapTareas = createHeap();
@@ -284,6 +289,7 @@ void ingresarTareasHeap(Map* mapaTareas, List* tareasOrdenadas){
   }
 }
 
+//Reiniciamos todos los booleanos para cuando se ingresa más de una vez a la función mostrarTareas
 void reiniciarBooleanos(Map* mapaTareas){
   TareaNodo * aux = firstMap(mapaTareas);
 
@@ -300,6 +306,7 @@ void reiniciarBooleanos(Map* mapaTareas){
   }
 }
 
+//Imprimimos las tareas según el orden establecido en la función ingresarTareasHeap
 void mostrarTareas(Map* mapaTareas){
   List * tareasOrdenadas = createList();
   TareaNodo * tareaAux = firstMap(mapaTareas);
@@ -413,6 +420,7 @@ void clonarLista(List* listaPila, List* listaTemporal){
   }
 }
 
+//Cuando queremos eliminar una precedencia ya hecha lo que hacemos es acceder al primer elemento de la lista de precedentes de la ultima tarea a la que se le asignó una precedencia. Luego recorremos la lista hasta encontrar la ultima precedencia agregada y la eliminamos de la lista de precedencia.
 void deshacerPrecedencia(Map * mapaTareas, TareaNodoPrecedente* tareaPrecedente, TareaNodo* tarea){
   TareaNodoPrecedente * aux = firstList(tarea->listaPrecedentes);
 
@@ -424,6 +432,7 @@ void deshacerPrecedencia(Map * mapaTareas, TareaNodoPrecedente* tareaPrecedente,
   }
 }
 
+//En el caso de que queramos volver a agregar una tarea ya eliminada, lo que hacemos es crear un nodoPrecedente e ingresar la tarea a las listas de precedentes correspondientes. Finalmente, volvemos a agregar la tarea al mapa.
 void deshacerEliminacion(Map * mapaTareas, TareaNodoPila* nodoPila){
   TareaNodo* aux = firstMap(mapaTareas);
   
@@ -445,6 +454,7 @@ void deshacerEliminacion(Map * mapaTareas, TareaNodoPila* nodoPila){
   insertMap(mapaTareas, nodoPila->tarea->nombre, nodoPila->tarea);
 }
 
+//En el caso de que debamos deshacer la adición de una tarea, debemos eliminarla. Por lo tanto, hacemos lo mismo que en eliminarTarea con la diferencia en que no guardamos en la pila de acciones.
 void deshacerAdicion(Map* mapaTareas, TareaNodo * tarea, char * nombreTarea){
   List* listaTemporal = createList();
   eraseMap(mapaTareas, tarea->nombre);
@@ -463,6 +473,7 @@ void deshacerAdicion(Map* mapaTareas, TareaNodo * tarea, char * nombreTarea){
   } 
 }
 
+//Verificamos si existe alguna accion a deshacer. Luego en los if vamos comparando el tipo de acción que se realizó y deshacemos según lo que corresponda. Finalmente, eliminamos la ultima accion ingresada de la pila.
 void deshacerUltimaAccion(Map* mapaTareas, Stack* pila){
   if (stack_top(pila) == NULL) {
       printf("No hay acciones para deshacer.\n");
