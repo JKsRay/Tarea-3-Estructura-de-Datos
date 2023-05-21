@@ -44,6 +44,8 @@ void deshacerUltimaAccion(Map*, Stack*);
 void deshacerPrecedencia(Map*, TareaNodoPrecedente* , TareaNodo*);
 void deshacerEliminacion(Map* , TareaNodoPila*);
 void deshacerAdicion(Map *, TareaNodo*, char*);
+void importarDatosTareas(Map*);
+char *get_csv_field(char*, int);
 
 
 int is_equal_string(void * key1, void * key2) {
@@ -111,6 +113,7 @@ int main() {
         break;
 
       case 6:
+        importarDatosTareas(mapaTareas);
         break;
         
       case 0:
@@ -499,4 +502,105 @@ void deshacerUltimaAccion(Map* mapaTareas, Stack* pila){
   stack_pop(pila);
   free(ultimaAccion);
   printf("\nACCIÓN DESHECHA CON ÉXITO\n");
+}
+
+char *get_csv_field (char * tmp, int k) {
+    int open_mark = 0;
+    char* ret=(char*) malloc (100*sizeof(char));
+    int ini_i=0, i=0;
+    int j=0;
+    while(tmp[i+1]!='\0'){
+
+        if(tmp[i]== '\"'){
+            open_mark = 1-open_mark;
+            if(open_mark) ini_i = i+1;
+            i++;
+            continue;
+        }
+
+        if(open_mark || tmp[i]!= ','){
+            if(k==j) ret[i-ini_i] = tmp[i];
+            i++;
+            continue;
+        }
+
+        if(tmp[i]== ','){
+            if(k==j) {
+               ret[i-ini_i] = 0;
+               return ret;
+            }
+            j++; ini_i = i+1;
+        }
+
+        i++;
+    }
+
+    if(k==j) {
+       ret[i-ini_i] = 0;
+       return ret;
+    }
+
+
+    return NULL;
+}
+
+
+void importarDatosTareas(Map*mapaTareas) {
+  char nombreArchivo[101];
+  printf("\nINGRESE NOMBRE DEL ARCHIVO A IMPORTAR LOS JUGADORES:\n");
+  scanf("%100[^\n]s", nombreArchivo);
+  
+  FILE* archivoTareas = fopen(nombreArchivo, "r");
+  if (archivoTareas == NULL) {
+      printf("Error al abrir el archivo\n");
+      return;
+  }
+
+  char linea[1024];
+  int i;
+  char delimit[]=" \t\r\n\v\f";
+  fgets (linea, 1023, archivoTareas);
+  
+  while (fgets (linea, 1023, archivoTareas) != NULL) { 
+    TareaNodo * tarea = (TareaNodo*) malloc(sizeof(TareaNodo));
+    tarea->explorado = false;
+    tarea->listaPrecedentes = createList();
+    char *precedentes;
+    
+      for(i=0;i<3;i++){
+
+        char *aux = get_csv_field(linea, i); 
+        if(i == 0){
+          strcpy(tarea->nombre, aux);
+        }
+
+        if(i == 1){
+          int prioridad = atoi(aux);
+          tarea->prioridad = prioridad;
+        }
+        
+        if(i == 2){
+          if(strlen(aux) > 1){
+            
+            precedentes = strtok(aux,delimit);
+           
+            while(precedentes != NULL){
+              TareaNodoPrecedente * tareaPrecedente = (TareaNodoPrecedente *) malloc(sizeof(TareaNodoPrecedente));
+
+              TareaNodo* aux2= searchMap(mapaTareas, precedentes);
+              strcpy(tareaPrecedente->nombre, aux2->nombre);
+              tareaPrecedente->prioridad= aux2->prioridad;
+              tareaPrecedente->visitado = false;
+
+              if (tareaPrecedente != NULL) pushBack(tarea->listaPrecedentes, tareaPrecedente);
+              precedentes = strtok(NULL,delimit);
+
+            }
+          }  
+        }
+      }
+    insertMap(mapaTareas, tarea->nombre, tarea);
+  }
+  fclose(archivoTareas);
+  printf("\nDATOS CARGADOS CON ÉXITO\n");
 }
