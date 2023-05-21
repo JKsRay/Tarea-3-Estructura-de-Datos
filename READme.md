@@ -5,7 +5,7 @@
 En el repositorio de GitHub, apretar el botón < >Code y luego se debe copiar el link que se encuenta abajo de donde dice HTTPS. Luego se debe crear un nuevo replit importando de github el link. Finalmente se debe apretar Run para correr el código.
 
 --------------------------OPCIONES DE LA TAREA--------------------------
-La tarea proporciona diversas opciones que funcionan correctamente. No se reportan problemas conocidos hasta el momento.
+La tarea proporciona diversas opciones que funcionan correctamente. No se reportan problemas conocidos hasta el momento. 
 
 # Coevaluación en Equipo
 ### Punteros haters

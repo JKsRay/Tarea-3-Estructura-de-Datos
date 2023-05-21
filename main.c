@@ -74,7 +74,7 @@ int main() {
   Stack*pilaAcciones = stack_create();
   
   while (ejecucion) {
-    printf("\nBIENVENIDX, ELIJA UNA OPCIÓN\n");
+    printf("\nELIJA UNA OPCIÓN:");
     printf("\n1.-AGREGAR TAREA\n");
     printf("2.-ESTABLECER PRECEDENCIA ENTRE TAREAS\n");
     printf("3.-MOSTRAR TAREAS POR HACER\n");
